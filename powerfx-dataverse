@@ -1,0 +1,144 @@
+// Author: Gaurav Poudel
+// License: The Unlicense
+// Language: PowerFX
+// Store me in the onstart section of power apps.
+// All code provided as is, released without any responsibility into the public domain without ownership.
+//
+// Here I import 2 dataverse tables, Accounts and Contacts, then use them as colAccounts and colContacts. They are easy because the Latitude & Longitude are already provided.
+//
+// OnStart - Check if data is loaded, if not trigger data refresh. We bypass 500-row database limit by pulling data in chunks - and I didnt have ID column.
+
+If(
+    IsEmpty(Accounts),
+    Refresh(Accounts)
+);
+If(
+    IsEmpty(Contacts),
+    Refresh(Contacts)
+);
+
+// Determine the total number of records
+
+Set(
+    totalAccountsRecords,
+    CountIf(
+        Accounts,
+        true
+    )
+);
+Set(
+    iterationAccounts,
+    RoundUp(
+        totalAccountsRecords / 500,
+        0
+    )
+);
+
+// Start creating collections
+
+ClearCollect(
+    iterationAccountsSequence,
+    Sequence(iterationAccounts)
+);
+Clear(colAccounts);
+ForAll(
+    iterationAccountsSequence,
+    With(
+        {
+            startRow: (Value - 1) * 500,
+            endRow: Value * 500,
+            startDate: First(
+                Sort(
+                    Accounts,
+                    createdon,
+                    SortOrder.Ascending
+                )
+            ).createdon,
+            endDate: First(
+                Sort(
+                    Accounts,
+                    createdon,
+                    SortOrder.Descending
+                )
+            ).createdon
+        },
+        Collect(
+            colAccounts,
+            Filter(
+                Accounts,
+                createdon >= startDate && createdon < endDate
+            )
+        )
+    )
+);
+
+Set(
+    totalContactsRecords,
+    CountIf(
+        Contacts,
+        true
+    )
+);
+Set(
+    iterationContacts,
+    RoundUp(
+        totalContactsRecords / 500,
+        0
+    )
+);
+ClearCollect(
+    iterationContactsSequence,
+    Sequence(iterationContacts)
+);
+
+Clear(colContacts);
+ForAll(
+    iterationContactsSequence,
+    With(
+        {
+            startRow: (Value - 1) * 500,
+            endRow: Value * 500
+        },
+        With(
+            {
+                startDate: If(
+                    Value = 1,
+                    First(
+                        Sort(
+                            Contacts,
+                            createdon,
+                            SortOrder.Ascending
+                        )
+                    ).createdon,
+                    Last(
+                        FirstN(
+                            Sort(
+                                Contacts,
+                                createdon,
+                                SortOrder.Ascending
+                            ),
+                            startRow
+                        )
+                    ).createdon
+                ),
+                endDate: Last(
+                    FirstN(
+                        Sort(
+                            Contacts,
+                            createdon,
+                            SortOrder.Descending
+                        ),
+                        endRow
+                    )
+                ).createdon
+            },
+            Collect(
+                colContacts,
+                Filter(
+                    Contacts,
+                    createdon >= startDate && createdon < endDate
+                )
+            )
+        )
+    )
+);
