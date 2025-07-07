@@ -4,8 +4,7 @@
 // Store me in the formula section of power apps. Use component "Map", with Parent.Width & Parent.Height, then import to container in Power Apps Canvas.
 // All code provided as is, released without any responsibility into the public domain without ownership.
 //
-// Here I import 2 components, Accounts and Contacts. They are easy because the Latitude & Longitude are already provided.
-//
+// Here I import 2 databases, Accounts and Contacts. They are easy because the Latitude & Longitude are already provided.
 // Create collections to cache base data - for some reason the map only works when I provide the element structure in this table ;)
 
 EmptyTable = Table(
